@@ -1,0 +1,301 @@
+---
+title: "code Part d"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, eval = FALSE}
+#install and library packages we need.
+install.packages("shinydashboard")
+install.packages("htmlwidgets")
+install.packages("leaflet")
+install.packages("leaflet.extras")
+install.packages("htmltools")
+install.packages("shiny")
+library(leaflet.extras)
+library(shinydashboard)
+library(htmlwidgets)
+library(tidyverse)
+library(leaflet)
+library(htmltools)
+library(shiny)
+```
+
+```{r, eval = FALSE}
+#we change our data type for future analysis.
+final_dataframe$Score_Hygiene <- as.numeric(final_dataframe$Score_Hygiene)
+final_dataframe$Score_Structural <- as.numeric(final_dataframe$Score_Structural)
+final_dataframe$Score_ConfidenceInManagement <- as.numeric(final_dataframe$Score_ConfidenceInManagement)
+#we pick up the data we need, because we believe we need data where the scores and geocodes data are not empty.
+mydata <- final_dataframe %>% filter(final_dataframe$Score_Hygiene>= 0 & Score_Structural >= 0 & Score_ConfidenceInManagement >= 0)
+mydata$Geocode_Longitude <- as.numeric(mydata$Geocode_Longitude)
+mydata$Geocode_Latitude <- as.numeric(mydata$Geocode_Latitude)
+mydata <- mydata %>% filter(Geocode_Latitude <= 0 | Geocode_Latitude > 0  )
+#we need data which has been approved
+mydata <- mydata %>% filter(NewRatingPending == "False")
+#we need the latest data ,which means we need to filter the data using RatingDate
+mydata <- mydata %>% group_by(Geocode_Latitude,Geocode_Longitude) %>% arrange(desc(RatingDate)) %>% slice(1) %>% ungroup()
+```
+
+```{r, eval = FALSE}
+#we decide to construct our shinydashboard by BuisnessType, so we group the all data into 14 groups
+Distributors_Transporters <- mydata %>% filter(BusinessType == "Distributors/Transporters")
+Farmers_growers <- mydata %>% filter(BusinessType == "Farmers/growers")
+Hospitals_Childcare_CaringPremises <- mydata %>% filter(BusinessType == "Hospitals/Childcare/Caring Premises")
+Hotel_bed_and_breakfast_guesthouse <- mydata %>% filter(BusinessType == "Hotel/bed & breakfast/guest house")
+Importers_Exporters <- mydata %>% filter(BusinessType == "Importers/Exporters")
+Manufacturers_packers <- mydata %>% filter(BusinessType == "Manufacturers/packers")
+Mobile_caterer <- mydata %>% filter(BusinessType == "Mobile caterer")
+Other_catering_premises <- mydata %>% filter(BusinessType == "Other catering premises")
+Pub_bar_nightclub <- mydata %>% filter(BusinessType == "Pub/bar/nightclub")
+Restaurant_Cafe_Canteen <- mydata %>% filter(BusinessType == "Restaurant/Cafe/Canteen")
+Retailers_other <- mydata %>% filter(BusinessType == "Retailers - other")
+Retailers_supermarkets_hypermarkets <- mydata %>% filter(BusinessType == "Retailers - supermarkets/hypermarkets")
+School_college_university <- mydata %>% filter(BusinessType == "School/college/university")
+Takeaway_sandwich_shop <- mydata %>% filter(BusinessType == "Takeaway/sandwich shop")
+```
+
+
+
+
+```{r shinydashboard, eval = FALSE}
+
+color <- rainbow(14)
+level <- c("Distributors_Transporters","Farmers_growers","Hospitals_Childcare_CaringPremises","Hotel_bed_and_breakfast_guesthouse","Importers_Exporters","Manufacturers_packers","Mobile_caterer","Other_catering_premises","Pub_bar_nightclub","Restaurant_Cafe_Canteen","Retailers_other","Retailers_supermarkets_hypermarkets","School_college_university","Takeaway_sandwich_shop")
+pal <- colorFactor(palette = color,
+                   levels = level)
+
+
+header <- dashboardHeader(title = "UK Hygiene Data")
+
+sidebar <- dashboardSidebar(
+  sidebarMenu(
+    menuItem(text = "Information" , tabName = "All"),
+    menuItem(text = "Distributors/Transporters", tabName = level[1],icon = icon("dolly-flatbed")),
+    menuItem(text = "Farmers/Growers",tabName = level[2],icon = icon("seedling")),
+    menuItem(text = "Hospitals/Childcare",tabName = level[3],icon = icon("hospital")),
+    menuItem(text = "Hotel/Breakfast/Guesthouse", tabName = level[4],icon = icon("hotel")),
+    menuItem(text = "Importers/Exporters", tabName = level[5],icon = icon("route")),
+    menuItem(text = "Manufactures/Packers", tabName = level[6],icon = icon("box-open")),
+    menuItem(text = "Mobile/Caterer", tabName = level[7],icon = icon("mobile")),
+    menuItem(text = "OtherCatering", tabName = level[8],icon = icon("utensils")),
+    menuItem(text = "Pubbar/Nightclub", tabName = level[9],icon = icon("glass-cheers")),
+    menuItem(text ="Restaurant/Cafe/Canteen", tabName = level[10],icon=icon("coffee")),
+    menuItem(text = "Retailers_other", tabName = level[11],icon = icon("receipt")),
+    menuItem(text = "Supermarkets/Hypermarkets", tabName =  level[12],icon = icon("bacon")),
+    menuItem(text = "School/College/University", tabName = level[13],icon = icon("university")),
+    menuItem(text = "Takeaway/Sandwich/Shop", tabName =  level[14],icon = icon("hamburger"))
+  )
+)
+
+body <- dashboardBody(
+  tabItems(
+    tabItem(tabName = "All",
+            fluidRow(
+  box(width = 12, height = 100, background = "navy",
+    title = "Description",
+    "This shinydashboard is created to show the latest UK hygiene data"),
+  box(width = 12, height = 100,  background = "olive",
+    title = "How to use",
+    "These maps are grouped by business type so click the sidebar with the business type you want to check"),
+  box(width = 12, height = 100, background = "yellow",
+    title = "Authority",
+    "Created by Chengwei Wei")
+  )
+  
+  ),
+    tabItem(tabName = level[1], leafletOutput(level[1])),
+    tabItem(tabName = level[2], leafletOutput(level[2])),
+    tabItem(tabName = level[3], leafletOutput(level[3])),
+    tabItem(tabName = level[4], leafletOutput(level[4])),
+    tabItem(tabName = level[5], leafletOutput(level[5])),
+    tabItem(tabName = level[6], leafletOutput(level[6])),
+    tabItem(tabName = level[7], leafletOutput(level[7])),
+    tabItem(tabName = level[8], leafletOutput(level[8])),
+    tabItem(tabName = level[9], leafletOutput(level[9])),
+    tabItem(tabName = level[10], leafletOutput(level[10])),
+    tabItem(tabName = level[11], leafletOutput(level[11])),
+    tabItem(tabName = level[12], leafletOutput(level[12])),
+    tabItem(tabName = level[13], leafletOutput(level[13])),
+    tabItem(tabName = level[14], leafletOutput(level[14]))
+  )
+  
+)
+
+ui <- dashboardPage(header,sidebar,body)
+```
+
+
+
+
+
+```{r, eval = FALSE}
+server <- function(input, output) {
+  
+  
+  
+  output$Distributors_Transporters <- renderLeaflet({
+    #we provide three tiles to our dashboard.
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+      #we add circlemarkers by using the geocodes data. Besides, we decide our radius,label,and popup. Then, we use color and group argument to group this part. Similarly, we do the same thing to the other 13 groups and in the end, we add a control part to decide which groups we want to check.
+        addCircleMarkers(data = Distributors_Transporters, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters") , group = "Distributors_Transporters") %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Distributors_Transporters"))%>%
+      addResetMapButton()
+  })
+  
+  output$Farmers_growers <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Farmers_growers, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Farmers_growers" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Farmers_growers"))%>%
+      addResetMapButton()
+  })
+ 
+  
+   output$Hospitals_Childcare_CaringPremises <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Hospitals_Childcare_CaringPremises, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Hospitals_Childcare_CaringPremises" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Hospitals_Childcare_CaringPremises"))%>%
+       addResetMapButton()
+  })
+  
+   output$Hotel_bed_and_breakfast_guesthouse <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Hotel_bed_and_breakfast_guesthouse, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Hotel_bed_and_breakfast_guesthouse" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Hotel_bed_and_breakfast_guesthouse"))%>%
+       addResetMapButton()
+  })
+   
+   output$Importers_Exporters <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Importers_Exporters, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Importers_Exporters" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Importers_Exporters"))%>%
+       addResetMapButton()
+  })
+   
+    output$Other_catering_premises <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Other_catering_premises, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Other_catering_premises" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Other_catering_premises"))%>%
+        addResetMapButton()
+  })
+    
+     output$Manufacturers_packers <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Manufacturers_packers, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Manufacturers_packers" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Manufacturers_packers"))%>%
+         addResetMapButton()
+  })
+     
+      output$Mobile_caterer <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Mobile_caterer, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Mobile_caterer" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Mobile_caterer"))%>%
+          addResetMapButton()
+  })
+      
+       output$Pub_bar_nightclub <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Pub_bar_nightclub, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Pub_bar_nightclub" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Pub_bar_nightclub"))%>%
+           addResetMapButton()
+  })
+       
+       output$Restaurant_Cafe_Canteen <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Restaurant_Cafe_Canteen, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Restaurant_Cafe_Canteen" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Restaurant_Cafe_Canteen"))%>%
+           addResetMapButton()
+  })
+       
+       output$Retailers_other <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Retailers_other, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Retailers_other" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Retailers_other"))%>%
+           addResetMapButton()
+  })
+       
+       output$Retailers_supermarkets_hypermarkets <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Retailers_supermarkets_hypermarkets, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Retailers_supermarkets_hypermarkets" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Retailers_supermarkets_hypermarkets"))%>%
+           addResetMapButton()
+  })
+   
+       output$School_college_university <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = School_college_university, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="School_college_university" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("School_college_university"))%>%
+           addResetMapButton()
+  })
+   
+       output$Takeaway_sandwich_shop <- renderLeaflet({
+    leaflet() %>% addProviderTiles("CartoDB",group = "CartoDB") %>% 
+        addProviderTiles("Esri", group = "Esri") %>% 
+        addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>% 
+        addCircleMarkers(data = Takeaway_sandwich_shop, clusterOptions = markerClusterOptions(),lng = Distributors_Transporters$Geocode_Longitude,lat = Distributors_Transporters$Geocode_Latitude ,radius = 2, label = ~htmlEscape(BusinessName),popup = ~paste0("<b>",BusinessName,"</b>","<br/>","Score_Hygiene : ",Score_Hygiene,"<br/>","Score_Structural : ",Score_Structural,"<br/>","Score_ConfidenceManagement : ",Score_ConfidenceInManagement), color=pal("Distributors_Transporters"), group ="Takeaway_sandwich_shop" ) %>%
+      addLayersControl( baseGroups = c("CartoDB", "Esri", "OpenStreetMap"))%>%
+      addSearchFeatures(targetGroups = c("Takeaway_sandwich_shop"))%>%
+           addResetMapButton()
+  })
+   
+   
+   
+}
+
+shinyApp(ui, server)
+```
+
+
+
+
+
+
+
+
+
+
