@@ -1,0 +1,124 @@
+---
+title: "part C code"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library, eval = FALSE}
+install.packages("httr")
+install.packages("xml2")
+install.packages("lubridate")
+library(httr) # GET()
+library(xml2)# xml_text()   xml_find_all()
+library(lubridate)# ymd()
+```
+
+
+```{r function, eval = FALSE}
+#first: to create a function to get our data and produce our dataframe. What we need to input into this function is our url(API) to get the xml document which stores a lot of semi-structured data.
+
+
+get_my_dataframe <- function(url){
+my_xml <- content(GET(url))
+# to add child to our xml trees because some xml documents have different structures from very standard structure and to keep the xml_text() to get the same 24 columns. we add child nodes and make sure we pick up the first value so for xml structure which have the node, we can get the value and for xml structure which does not have the node, we can get the "" value.
+
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"FHRSID")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"LocalAuthorityBusinessID")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"BusinessName")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"BusinessType")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"BusinessTypeID")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"AddressLine1")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"AddressLine2")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"AddressLine3")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"AddressLine4")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"PostCode")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"RatingValue")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"RatingKey")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"RatingDate")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"LocalAuthorityCode")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"LocalAuthorityName")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"LocalAuthorityWebSite")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"LocalAuthorityEmailAddress")
+xml_add_child(xml_find_all(my_xml,"//Scores"),"Hygiene")
+xml_add_child(xml_find_all(my_xml,"//Scores"),"Structural")
+xml_add_child(xml_find_all(my_xml,"//Scores"),"ConfidenceInManagement")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"SchemeType")
+xml_add_child(xml_find_all(my_xml,"//EstablishmentDetail"),"NewRatingPending")
+xml_add_child(xml_find_all(my_xml,"//Geocode"),"Longitude")
+xml_add_child(xml_find_all(my_xml,"//Geocode"),"Latitude")
+
+# we use this part to get the value in our nodes and store it in a vector for our use to create our dataframe
+
+FHRSID <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/FHRSID[1]"))
+LocalAuthorityBusinessID <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/LocalAuthorityBusinessID[1]"))
+BusinessName <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/BusinessName[1]"))
+BusinessType <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/BusinessType[1]"))
+BusinessTypeID <-  xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/BusinessTypeID[1]"))
+AddressLine1 <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/AddressLine1[1]"))
+AddressLine2 <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/AddressLine2[1]"))
+AddressLine3 <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/AddressLine3[1]"))
+AddressLine4 <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/AddressLine4[1]"))
+PostCode <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/PostCode[1]"))
+RatingValue <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/RatingValue[1]"))
+RatingKey <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/RatingKey[1]"))
+RatingDate <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/RatingDate[1]"))
+LocalAuthorityCode <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/LocalAuthorityCode[1]"))
+LocalAuthorityName <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/LocalAuthorityName[1]"))
+LocalAuthorityWebSite<- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/LocalAuthorityWebSite[1]"))
+
+LocalAuthorityEmailAddress <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/LocalAuthorityEmailAddress[1]"))
+
+Score_Hygiene <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/Scores/Hygiene[1]"))
+Score_Structural <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/Scores/Structural[1]"))
+Score_ConfidenceInManagement <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/Scores/ConfidenceInManagement[1]"))
+
+SchemeType <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/SchemeType[1]"))
+NewRatingPending <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/NewRatingPending[1]"))
+
+Geocode_Longitude <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/Geocode/Longitude[1]"))
+Geocode_Latitude <- xml_text(xml_find_all(my_xml,"/FHRSEstablishment/EstablishmentCollection/EstablishmentDetail/Geocode/Latitude[1]"))
+my_dataframe <- data.frame(FHRSID,LocalAuthorityBusinessID,BusinessName,BusinessType,BusinessTypeID,AddressLine1,AddressLine2,AddressLine3,AddressLine4,PostCode,RatingValue,RatingKey,RatingDate,LocalAuthorityCode,LocalAuthorityName,LocalAuthorityWebSite,LocalAuthorityEmailAddress,Score_Hygiene,Score_Structural,Score_ConfidenceInManagement,SchemeType,NewRatingPending,Geocode_Longitude,Geocode_Latitude)
+
+my_dataframe
+}
+```
+
+
+```{r prepare_url, eval = FALSE}
+# we use this chunk to prepare our urls for next part where we input these urls to get our dataframe.
+
+my_html <- content(GET("https://data.food.gov.uk/catalog/datasets/38dd8d6a-5ab1-4f50-b753-ab33288e3200"))
+
+url_lists <- xml_find_all(my_html,"//a")
+
+urls <- xml_attr(url_lists, attr="href")
+#we check and we find the urls we need is between 14 and 416
+urls <- urls[14:416]
+
+
+```
+
+```{r get_my_dataframe, eval = FALSE}
+#prepare a dataframe with 24 columns with right columns names and with no data.
+final_dataframe <- as.data.frame(matrix(numeric(0),ncol=24))
+colnames_dataframe <- c("FHRSID","LocalAuthorityBusinessID","BusinessName","BusinessType","BusinessTypeID","AddressLine1","AddressLine2","AddressLine3","AddressLine4","PostCode","RatingValue","RatingKey","RatingDate","LocalAuthorityCode","LocalAuthorityName","LocalAuthorityWebSite","LocalAuthorityEmailAddress","Score_Hygiene","Score_Structural","Score_ConfidenceInManagement","SchemeType","NewRatingPending","Geocode_Longitude","Geocode_Latitude")
+colnames(final_dataframe) <- colnames_dataframe
+
+#use loop function to input our urls into prepared function named "get_my_dataframe", and after every loop we use rbind() to renew our final_dataframe.
+for(i in urls){
+  dataframe_now <- get_my_dataframe(i)
+  final_dataframe <- rbind(final_dataframe,dataframe_now)
+}
+
+#write our final_dataframe into csv document and store it for future analysis.
+write.csv(final_dataframe,"data.csv")
+
+# it takes around 2 hours to finish this function.
+```
+
+
